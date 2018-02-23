@@ -25,7 +25,7 @@ import {ProjectConfig} from 'polymer-project-config';
 
 import {CommandResult} from '../commands/command';
 import {Options} from '../commands/lint';
-import {indent, prompt} from '../util';
+import {indent, prompt, resolvePath} from '../util';
 
 const logger = logging.getLogger('cli.lint');
 
@@ -88,15 +88,15 @@ async function run(
     filter: WarningFilter,
     editActionsToAlwaysApply = new Set(options.edits || []),
     watcher?: FilesystemChangeStream) {
-  let warnings;
+  let lintResult;
   if (options.input) {
-    warnings = await linter.lint(options.input);
+    lintResult = await linter.lint(options.input);
   } else {
-    warnings = await linter.lintPackage();
+    lintResult = await linter.lintPackage();
   }
-  const analysis = warnings.analysis;
+  const analysis = lintResult.analysis;
 
-  const filtered = warnings.filter((w) => !filter.shouldIgnore(w));
+  const filtered = lintResult.warnings.filter((w) => !filter.shouldIgnore(w));
 
   if (options.fix) {
     const changedFiles = await fix(
@@ -320,8 +320,9 @@ async function fix(
       await applyEdits(edits, makeParseLoader(analyzer, analysis));
 
   for (const [newPath, newContents] of editedFiles) {
+    const documentPath = resolvePath(newPath);
     await fs.writeFile(
-        path.join(config.root, newPath), newContents, {encoding: 'utf8'});
+        path.join(config.root, documentPath), newContents, {encoding: 'utf8'});
   }
 
   const appliedChangeCountByFile = countEditsByFile(appliedEdits);
