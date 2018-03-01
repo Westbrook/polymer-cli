@@ -54,7 +54,9 @@ export async function lint(options: Options, config: ProjectConfig) {
   const urlLoader = new FSUrlLoader(config.root);
   const analyzer = new Analyzer({
     urlLoader,
-    urlResolver: new PackageUrlResolver(),
+    urlResolver: new PackageUrlResolver({
+      componentDir: config.componentDir,
+    }),
   });
   const linter = new lintLib.Linter(rules, analyzer);
 
